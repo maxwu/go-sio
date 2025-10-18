@@ -164,7 +164,7 @@ func BenchmarkStreamReader(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		reader := strings.NewReader(data)
 		sr := NewStreamReader(reader, NopFilter)
-		io.ReadAll(sr)
+		_, _ = io.ReadAll(sr)
 	}
 }
 
@@ -178,8 +178,8 @@ not json
 	for i := 0; i < b.N; i++ {
 		reader := io.NopCloser(strings.NewReader(data))
 		jr := NewJSONFilterReadCloser(reader)
-		io.ReadAll(jr)
-		jr.Close()
+		_, _ = io.ReadAll(jr)
+		_ = jr.Close()
 	}
 }
 
