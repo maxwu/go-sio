@@ -1,8 +1,8 @@
 # go-sio
 
-Minimal helpers for streaming line-based IO in Go.
+Minimal helpers for streaming line-based IO in Go with no external dependencies.
 
-This small library provides utilities for reading streamed data line-by-line with configurable filtering, wrapping readers with closers, and a tee-style reader that captures the stream while still exposing an io.ReadCloser.
+This small library provides utilities for reading streamed data line-by-line with configurable filtering, wrapping readers with closers, and a tee-style reader that captures the stream while still exposing an io.ReadCloser. The package has no extra dependencies beyond the Go standard library.
 
 ## Key components
 
