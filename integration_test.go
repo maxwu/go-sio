@@ -156,24 +156,50 @@ also not json
 	})
 }
 
-// BenchmarkStreamReader tests the performance of StreamReader
+// BenchmarkStreamReader exercises StreamReader in common filter scenarios.
 func BenchmarkStreamReader(b *testing.B) {
-	data := strings.Repeat("test line\n", 1000)
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		reader := strings.NewReader(data)
-		sr := NewStreamReader(reader, NopFilter)
-		_, _ = io.ReadAll(sr)
+	passThroughData := strings.Repeat("test line\n", 1000)
+	dropData := strings.Repeat("keep\nskip\n", 500)           // drops half the lines
+	transformData := strings.Repeat("lowercase line\n", 1000) // uppercases all lines
+
+	dropFilter := func(s string) (string, error) {
+		if strings.HasPrefix(s, "keep") {
+			return s, nil
+		}
+		return "", nil
+	}
+	transformFilter := func(s string) (string, error) {
+		return strings.ToUpper(s), nil
+	}
+
+	benchmarks := []struct {
+		name   string
+		data   string
+		filter StringLineFilter
+	}{
+		{"NoFilter", passThroughData, NopFilter},
+		{"FilterDropHalf", dropData, dropFilter},
+		{"FilterTransform", transformData, transformFilter},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				reader := strings.NewReader(bm.data)
+				sr := NewStreamReader(reader, bm.filter)
+				_, _ = io.ReadAll(sr)
+			}
+		})
 	}
 }
 
-// BenchmarkJSONFilter tests the performance of JSON filtering
+// BenchmarkJSONFilter measures filtering of mixed JSON/non-JSON lines.
 func BenchmarkJSONFilter(b *testing.B) {
 	data := strings.Repeat(`{"test": "data"}
 not json
 `, 500)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		reader := io.NopCloser(strings.NewReader(data))
@@ -183,16 +209,16 @@ not json
 	}
 }
 
-// BenchmarkTeeReader tests the performance of TeeReader
+// BenchmarkTeeReader measures teeing a stream into a side buffer.
 func BenchmarkTeeReader(b *testing.B) {
 	data := strings.Repeat("benchmark data\n", 1000)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		reader := io.NopCloser(strings.NewReader(data))
 		var writer bytes.Buffer
 		tr := NewTeeReaderCloser(reader, &writer)
-		io.ReadAll(tr)
-		tr.Close()
+		_, _ = io.ReadAll(tr)
+		_ = tr.Close()
 	}
 }

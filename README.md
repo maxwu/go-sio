@@ -1,5 +1,7 @@
 # go-sio
 
+[![codecov](https://codecov.io/gh/maxwu/go-sio/graph/badge.svg?token=VG2FF2QYUI)](https://codecov.io/gh/maxwu/go-sio)
+
 Minimal helpers for streaming line-based IO in Go with no external dependencies.
 
 This small library provides utilities for reading streamed data line-by-line with configurable filtering, wrapping readers with closers, and a tee-style reader that captures the stream while still exposing an io.ReadCloser. The package has no extra dependencies beyond the Go standard library.
@@ -19,10 +21,10 @@ This project uses Go modules. From your module, add the dependency with:
 go get github.com/go-sio@latest
 ```
 
-Import in your code:
+Import in your code (use an alias because the module path contains a hyphen):
 
 ```go
-import "github.com/go-sio"
+import go_sio "github.com/go-sio"
 ```
 
 ## Quick examples
@@ -36,7 +38,8 @@ import (
     "fmt"
     "io"
     "strings"
-    "github.com/go-sio"
+
+    go_sio "github.com/go-sio"
 )
 
 func main() {
@@ -66,7 +69,8 @@ import (
     "fmt"
     "io"
     "os"
-    "github.com/go-sio"
+
+    go_sio "github.com/go-sio"
 )
 
 func main() {
@@ -89,7 +93,8 @@ import (
     "fmt"
     "io"
     "os"
-    "github.com/go-sio"
+
+    go_sio "github.com/go-sio"
 )
 
 func main() {
@@ -105,18 +110,16 @@ func main() {
 
 ## API reference (summary)
 
- `type StringLineFilter func(string) (string, error)`
-    - Filter applied to each line read by StreamReader. Return empty string to drop the line, return a non-empty string to emit it. Return an error to abort reading.
-    - Create a new StreamReader. If `r` is nil this returns nil. If `f` is nil a no-op filter is used.
-    - Wrap a ReadCloser and only yield lines that are valid JSON (uses encoding/json.Valid).
-    - Wraps the provided ReadCloser with an io.TeeReader that writes to `w` while still exposing Close.
-    - Utility to combine a Reader and a Closer into a single io.ReadCloser.
-
-- `func NewTeeReaderCloser(r io.ReadCloser, w io.Writer) *TeeReaderCloser`
-  - Wraps the provided ReadCloser with an io.TeeReader that writes to `w` while still exposing Close.
+- `type StringLineFilter func(string) (string, error)`: filter applied to each line read by StreamReader. Return an empty string to drop a line; return an error to abort reading.
+- `var ErrNilReader error`: returned when calling StreamReader.Read on a nil receiver.
+- `var NopFilter StringLineFilter`: a pass-through filter used when `nil` is provided.
+- `type StreamReader`: an io.Reader that emits filtered lines.
+- `func NewStreamReader(r io.Reader, f StringLineFilter) *StreamReader`: creates a StreamReader; returns nil when `r` is nil; falls back to NopFilter when `f` is nil.
+- `func NewJSONFilterReadCloser(r io.ReadCloser) io.ReadCloser`: wraps `r` and only yields lines that are valid JSON (uses `encoding/json.Valid`).
+- `type TeeReaderCloser struct { ... }`
+- `func NewTeeReaderCloser(r io.ReadCloser, w io.Writer) *TeeReaderCloser`: wraps `r` with an io.TeeReader that writes to `w` while preserving `Close`.
 - `type ReadCloser struct { io.Reader; io.Closer }`
-- `func NewReadCloser(r io.Reader, c io.Closer) *ReadCloser`
-  - Utility to combine a Reader and a Closer into a single io.ReadCloser.
+- `func NewReadCloser(r io.Reader, c io.Closer) *ReadCloser`: utility to combine a Reader and a Closer into a single io.ReadCloser.
 
 ## Notes and behaviour
 
