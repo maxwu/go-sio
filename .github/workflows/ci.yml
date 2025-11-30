@@ -32,4 +32,13 @@ jobs:
           only-new-issues: true
 
       - name: Run unit tests
-        run: go test -v -race ./...
+        run: go test -count=1 -v -race ./... -coverprofile=coverage.txt
+
+      - name: Run benchmarks (no unit tests)
+        run: go test -bench . -run '^$' ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: maxwu/go-sio
