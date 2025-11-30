@@ -108,6 +108,20 @@ func main() {
 }
 ```
 
+### Bonus: filter `go test -json` output, keeping only valid JSON lines
+
+```bash
+go test -json ./... | some-wrapping-tool
+```
+
+```go
+// Only emit the JSON event lines; skip the interleaved plain text.
+rc := go_sio.NewJSONFilterReadCloser(io.NopCloser(os.Stdin))
+defer rc.Close()
+b, _ := io.ReadAll(rc)
+fmt.Print(string(b))
+```
+
 ## API reference (summary)
 
 - `type StringLineFilter func(string) (string, error)`: filter applied to each line read by StreamReader. Return an empty string to drop a line; return an error to abort reading.
