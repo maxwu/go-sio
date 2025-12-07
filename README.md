@@ -21,10 +21,14 @@ This project uses Go modules. From your module, add the dependency with:
 go get github.com/maxwu/go-sio@latest
 ```
 
-Import in your code (use an alias because the module path contains a hyphen):
+Import in your code:
 
 ```go
-import go_sio "github.com/maxwu/go-sio"
+import "github.com/maxwu/go-sio"
+
+// You can also import with an explicit underscore alias to mirror the dash:
+// import go_sio "github.com/maxwu/go-sio"
+// (Go automatically treats the package name as go_sio even without the alias.)
 ```
 
 ## Quick examples
@@ -39,7 +43,7 @@ import (
     "io"
     "strings"
 
-    go_sio "github.com/maxwu/go-sio"
+    "github.com/maxwu/go-sio"
 )
 
 func main() {
@@ -70,7 +74,7 @@ import (
     "io"
     "os"
 
-    go_sio "github.com/maxwu/go-sio"
+    "github.com/maxwu/go-sio"
 )
 
 func main() {
