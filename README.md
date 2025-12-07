@@ -18,13 +18,13 @@ This small library provides utilities for reading streamed data line-by-line wit
 This project uses Go modules. From your module, add the dependency with:
 
 ```bash
-go get github.com/go-sio@latest
+go get github.com/maxwu/go-sio@latest
 ```
 
 Import in your code (use an alias because the module path contains a hyphen):
 
 ```go
-import go_sio "github.com/go-sio"
+import go_sio "github.com/maxwu/go-sio"
 ```
 
 ## Quick examples
@@ -39,7 +39,7 @@ import (
     "io"
     "strings"
 
-    go_sio "github.com/go-sio"
+    go_sio "github.com/maxwu/go-sio"
 )
 
 func main() {
@@ -70,7 +70,7 @@ import (
     "io"
     "os"
 
-    go_sio "github.com/go-sio"
+    go_sio "github.com/maxwu/go-sio"
 )
 
 func main() {
@@ -94,7 +94,7 @@ import (
     "io"
     "os"
 
-    go_sio "github.com/go-sio"
+    go_sio "github.com/maxwu/go-sio"
 )
 
 func main() {

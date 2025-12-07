@@ -160,7 +160,7 @@ func TestReadCloser_WithNilCloser(t *testing.T) {
 			t.Error("Expected panic when closing with nil closer")
 		}
 	}()
-	err = rc.Close()
+	rc.Close()
 	// Should not reach here
 	t.Error("Should have panicked before this point")
 }
