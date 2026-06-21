@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
 
@@ -26,19 +26,21 @@ jobs:
         run: go mod tidy
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          version: v2.12
           only-new-issues: true
 
       - name: Run unit tests
-        run: go test -count=1 -v -race ./... -coverprofile=coverage.txt
+        run: |
+          go test -count=1 -v -race ./... -coverprofile=coverage.txt
+          go tool cover -func=coverage.txt | grep -qE '^total:.*100\.0%$'
 
       - name: Run benchmarks (no unit tests)
         run: go test -bench . -run '^$' ./...
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: maxwu/go-sio

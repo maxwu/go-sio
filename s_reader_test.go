@@ -249,7 +249,7 @@ func TestStreamReader_Read_NoFinalNewline(t *testing.T) {
 
 	// Should return EOF on next read
 	buf = make([]byte, 10)
-	n, err = sr.Read(buf)
+	_, err = sr.Read(buf)
 	if err != io.EOF {
 		t.Errorf("Expected EOF, got %v", err)
 	}
