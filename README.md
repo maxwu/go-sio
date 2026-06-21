@@ -147,7 +147,7 @@ fmt.Print(string(b))
 
 ## Development
 
-See [CLAUDE.md](./CLAUDE.md) for project rules and constraints.
+See [AGENTS.md](./AGENTS.md) for project rules and constraints.
 
 ## Contributing
 
