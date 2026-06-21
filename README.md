@@ -145,6 +145,10 @@ fmt.Print(string(b))
 - NewStreamReader will return nil when passed a nil reader — callers should check for this.
 - StreamReader's Read returns ErrNilReader (from the package) if the receiver is nil.
 
+## Development
+
+See [CLAUDE.md](./CLAUDE.md) for project rules and constraints.
+
 ## Contributing
 
 Contributions are welcome. Please open issues or pull requests for bugs, feature requests, or improvements.
