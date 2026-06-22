@@ -8,14 +8,14 @@ This small library provides utilities for reading streamed data line-by-line wit
 
 ## Key components
 
-- **StreamReader**: an io.Reader that reads input line-by-line and applies a configurable filter function to each line. Useful for processing logs or other newline-delimited streams without loading the whole stream into memory.
+- **StreamReader**: an io.Reader that reads input line-by-line and applies a configurable filter function to each line. Useful for processing logs or other newline-delimited streams incrementally.
 - **NewJSONFilterReadCloser**: wraps an existing io.ReadCloser and only yields lines that are valid JSON.
 - **NewTeeReaderCloser**: a combination of io.TeeReader and an io.Closer — useful when you want to copy the stream to another writer while preserving Close.
 - **NewReadCloser**: create a simple io.ReadCloser from an io.Reader and an io.Closer.
 
 ## Installation
 
-This project uses Go modules. From your module, add the dependency with:
+This project uses Go modules and requires Go 1.26 or newer. From your module, add the dependency with:
 
 ```bash
 go get github.com/maxwu/go-sio@latest
@@ -26,7 +26,7 @@ Import in your code:
 ```go
 import "github.com/maxwu/go-sio"
 
-// You can also import with an explicit underscore alias to mirror the dash:
+// You can also give the import an explicit package name:
 // import go_sio "github.com/maxwu/go-sio"
 // (Go automatically treats the package name as go_sio even without the alias.)
 ```
@@ -41,16 +41,17 @@ package main
 import (
     "fmt"
     "io"
+    "log"
     "strings"
 
     "github.com/maxwu/go-sio"
 )
 
 func main() {
-    data := "one\ntwo\nthree\n"
+    data := "one\n\ntwo\nthree"
     r := strings.NewReader(data)
     f := func(s string) (string, error) {
-        if s == "" {
+        if s == "\n" {
             return "", nil
         }
         return strings.ToUpper(s), nil
@@ -59,7 +60,10 @@ func main() {
     if sr == nil {
         panic("failed to create StreamReader")
     }
-    out, _ := io.ReadAll(sr)
+    out, err := io.ReadAll(sr)
+    if err != nil {
+        log.Fatal(err)
+    }
     fmt.Print(string(out))
 }
 ```
@@ -72,17 +76,27 @@ package main
 import (
     "fmt"
     "io"
+    "log"
     "os"
 
     "github.com/maxwu/go-sio"
 )
 
 func main() {
-    f, _ := os.Open("stream.log")
-    defer f.Close()
+    f, err := os.Open("stream.log")
+    if err != nil {
+        log.Fatal(err)
+    }
     rc := go_sio.NewJSONFilterReadCloser(f)
-    defer rc.Close()
-    b, _ := io.ReadAll(rc)
+
+    b, readErr := io.ReadAll(rc)
+    closeErr := rc.Close()
+    if readErr != nil {
+        log.Fatal(readErr)
+    }
+    if closeErr != nil {
+        log.Fatal(closeErr)
+    }
     fmt.Print(string(b))
 }
 ```
@@ -96,34 +110,30 @@ import (
     "bytes"
     "fmt"
     "io"
+    "log"
     "os"
 
-    go_sio "github.com/maxwu/go-sio"
+    "github.com/maxwu/go-sio"
 )
 
 func main() {
-    f, _ := os.Open("stream.log")
-    defer f.Close()
+    f, err := os.Open("stream.log")
+    if err != nil {
+        log.Fatal(err)
+    }
     var buf bytes.Buffer
     trc := go_sio.NewTeeReaderCloser(f, &buf)
-    defer trc.Close()
-    _, _ = io.Copy(os.Stdout, trc)
+
+    _, copyErr := io.Copy(os.Stdout, trc)
+    closeErr := trc.Close()
+    if copyErr != nil {
+        log.Fatal(copyErr)
+    }
+    if closeErr != nil {
+        log.Fatal(closeErr)
+    }
     fmt.Println("Captured:", buf.String())
 }
-```
-
-### Bonus: filter `go test -json` output, keeping only valid JSON lines
-
-```bash
-go test -json ./... | some-wrapping-tool
-```
-
-```go
-// Only emit the JSON event lines; skip the interleaved plain text.
-rc := go_sio.NewJSONFilterReadCloser(io.NopCloser(os.Stdin))
-defer rc.Close()
-b, _ := io.ReadAll(rc)
-fmt.Print(string(b))
 ```
 
 ## API reference (summary)
@@ -141,18 +151,32 @@ fmt.Print(string(b))
 
 ## Notes and behaviour
 
-- StreamReader reads using a bufio.Scanner with a custom split function that keeps newline characters in emitted tokens. The provided filter receives the full line (including newline) as a string. Returning the empty string drops that line from output.
+- StreamReader reads using a bufio.Scanner with a custom split function. The filter receives the newline terminator when one is present; the final line may be passed without a newline. Returning the empty string drops that line from output.
+- The scanner uses Go's default maximum token size of approximately 64 KiB. Reading a longer line returns a `bufio.Scanner: token too long` error.
+- NewJSONFilterReadCloser accepts any complete JSON value recognized by `encoding/json.Valid`, including objects, arrays, strings, numbers, booleans, and null.
+- Closing a ReadCloser returned by NewJSONFilterReadCloser or NewTeeReaderCloser closes the original reader. Callers should close only the wrapper.
 - NewStreamReader will return nil when passed a nil reader — callers should check for this.
 - StreamReader's Read returns ErrNilReader (from the package) if the receiver is nil.
 
 ## Development
 
-See [AGENTS.md](./AGENTS.md) for project rules and constraints.
+Development requires Go 1.26 and golangci-lint 2.12. The library must remain free of third-party dependencies, and all production code must retain 100% unit-test coverage.
+
+Format changed Go files with `gofmt`, then run the same checks used by CI:
+
+```bash
+golangci-lint run ./...
+go test -count=1 -race ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out | grep -qE '^total:.*100\.0%$'
+go test -bench . -run '^$' ./...
+```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the contributor workflow and [AGENTS.md](./AGENTS.md) for coding-agent constraints.
 
 ## Contributing
 
-Contributions are welcome. Please open issues or pull requests for bugs, feature requests, or improvements.
+Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 
 ## License
 
-This project is MIT licensed — see the `LICENSE` file.
+This project is MIT licensed — see [LICENSE](./LICENSE).
